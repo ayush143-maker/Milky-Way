@@ -1,1175 +1,498 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#030509">
-<title>MILKY WAY — Procedural Atlas</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Michroma&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>
-  :root{
-    --ink:#c9d2e2; --dim:#7e8899; --acc:#e6b06a;
-    --line:rgba(190,205,230,.16); --panel:rgba(7,10,17,.62);
-    --sat:env(safe-area-inset-top,0px); --sab:env(safe-area-inset-bottom,0px);
-  }
-  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-  html,body{height:100%;overflow:hidden;background:#020409;overscroll-behavior:none}
-  body{font-family:'IBM Plex Mono',ui-monospace,monospace;color:var(--ink);
-       -webkit-font-smoothing:antialiased;position:fixed;inset:0;width:100%}
-  canvas{display:block;position:fixed;inset:0;touch-action:none;cursor:grab}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>OpenRouter Tester</title>
+    <style>
+        :root {
+            --bg: #0d0d0d;
+            --surface: #1a1a1a;
+            --text: #ffffff;
+            --subtext: #a0a0a0;
+            --accent: #ff2f92; /* Hot Pink */
+            --accent-glow: rgba(255, 47, 146, 0.3);
+        }
 
-  #vignette{position:fixed;inset:0;pointer-events:none;z-index:2;
-    background:
-      radial-gradient(120% 90% at 50% 42%, transparent 55%, rgba(2,4,10,.52) 100%),
-      linear-gradient(180deg, rgba(3,5,10,.35), transparent 18%);}
-  #frame i{position:fixed;width:16px;height:16px;z-index:3;pointer-events:none;
-    border-color:var(--line);border-style:solid;border-width:0}
-  #frame i:nth-child(1){top:calc(12px + var(--sat));left:12px;border-top-width:1px;border-left-width:1px}
-  #frame i:nth-child(2){top:calc(12px + var(--sat));right:12px;border-top-width:1px;border-right-width:1px}
-  #frame i:nth-child(3){bottom:12px;left:12px;border-bottom-width:1px;border-left-width:1px}
-  #frame i:nth-child(4){bottom:12px;right:12px;border-bottom-width:1px;border-right-width:1px}
+        * { box-sizing: border-box; margin: 0; padding: 0; }
 
-  #ui{position:fixed;inset:0;z-index:4;pointer-events:none}
-  #ui button{pointer-events:auto;font-family:inherit}
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
 
-  header{position:absolute;top:calc(20px + var(--sat));left:18px;animation:rise .9s .2s cubic-bezier(.2,.8,.2,1) both}
-  header h1{font-family:'Michroma',sans-serif;font-size:14px;font-weight:400;
-    letter-spacing:.38em;color:#e8edf6;text-shadow:0 0 22px rgba(120,150,220,.25)}
-  header .sub{margin-top:6px;font-size:8px;letter-spacing:.22em;color:var(--dim);max-width:70vw}
-  .readout{margin-top:12px;border-left:1px solid rgba(230,176,106,.4);padding-left:10px}
-  .readout .row{display:flex;gap:8px;align-items:baseline;margin-top:4px}
-  .readout label{font-size:7.5px;letter-spacing:.24em;color:var(--dim);width:42px}
-  .readout span{font-size:11px;letter-spacing:.08em;color:var(--ink)}
-  .readout span b{color:var(--acc);font-weight:500}
+        /* Header */
+        header {
+            background: var(--surface);
+            padding: 15px;
+            border-bottom: 1px solid #333;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
 
-  .tools{position:absolute;top:calc(18px + var(--sat));right:14px;display:flex;gap:8px;
-    animation:rise .9s .35s cubic-bezier(.2,.8,.2,1) both}
-  .tool{font-size:9px;letter-spacing:.18em;color:var(--dim);background:var(--panel);
-    border:1px solid var(--line);padding:10px 12px;border-radius:2px;cursor:pointer;
-    display:flex;align-items:center;gap:7px;transition:all .18s ease;min-height:34px}
-  .tool:active{color:var(--acc);border-color:rgba(230,176,106,.5)}
-  .tool i{width:6px;height:6px;border:1px solid var(--dim);border-radius:50%;transition:all .18s}
-  .tool.on{color:var(--ink)}
-  .tool.on i{background:var(--acc);border-color:var(--acc);box-shadow:0 0 8px rgba(230,176,106,.7)}
+        h1 {
+            font-size: 1.2rem;
+            color: var(--accent);
+            letter-spacing: 1px;
+        }
 
-  #dock{position:absolute;left:50%;bottom:calc(14px + var(--sab));transform:translateX(-50%);
-    display:flex;gap:6px;max-width:96vw;overflow-x:auto;padding:4px 2px 6px;
-    scrollbar-width:none;-webkit-overflow-scrolling:touch;
-    animation:riseDock .9s .5s cubic-bezier(.2,.8,.2,1) both}
-  #dock::-webkit-scrollbar{display:none}
-  .chip{flex:0 0 auto;display:flex;align-items:center;gap:7px;font-size:9px;letter-spacing:.16em;
-    color:var(--dim);background:var(--panel);border:1px solid var(--line);border-radius:2px;
-    padding:10px 12px;min-height:34px;cursor:pointer;transition:all .16s ease}
-  .chip i{width:5px;height:5px;border-radius:50%;flex:0 0 auto}
-  .chip:active{color:var(--ink);border-color:rgba(200,215,240,.4)}
-  .chip.active{color:var(--acc);border-color:rgba(230,176,106,.55)}
-  .chip.gal{border-left:2px solid rgba(150,175,225,.45)}
+        #settings-btn {
+            background: transparent;
+            border: none;
+            color: var(--text);
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 5px;
+        }
 
-  #hint{position:absolute;right:20px;bottom:calc(16px + var(--sab));font-size:8.5px;letter-spacing:.18em;
-    color:var(--dim);text-align:right;line-height:2;transition:opacity 1.2s ease}
-  #hint.gone{opacity:0}
-  #hint b{color:#aab6ca;font-weight:400}
-  @media (pointer:coarse){ #hint{display:none} }
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            background: var(--surface);
+            padding: 10px 15px;
+            border-bottom: 1px solid #333;
+        }
 
-  #tip{position:fixed;z-index:6;pointer-events:none;font-size:9px;letter-spacing:.2em;
-    color:var(--ink);background:rgba(8,11,18,.88);border:1px solid var(--line);
-    border-left:2px solid var(--acc);padding:4px 9px;opacity:0;transform:translate(-50%,-160%);
-    transition:opacity .12s ease}
+        .tab-btn {
+            background: transparent;
+            border: 1px solid #444;
+            color: var(--subtext);
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            flex: 1;
+            text-align: center;
+        }
 
-  #loader{position:fixed;inset:0;z-index:10;background:#030509;display:flex;flex-direction:column;
-    gap:20px;align-items:center;justify-content:center;transition:opacity .7s ease;padding:0 20px}
-  #loader.done{opacity:0;pointer-events:none}
-  #loader .t{font-family:'Michroma',sans-serif;font-size:13px;letter-spacing:.5em;color:#dfe6f2;padding-left:.5em}
-  #loader .s{font-size:8.5px;letter-spacing:.26em;color:var(--dim);text-align:center;line-height:1.9}
-  #loader .bar{width:180px;height:1px;background:rgba(190,205,230,.14);overflow:hidden}
-  #loader .bar::after{content:"";display:block;width:60px;height:1px;background:var(--acc);
-    animation:scan 1.15s ease-in-out infinite}
-  @keyframes scan{0%{transform:translateX(-60px)}100%{transform:translateX(180px)}}
-  @keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
-  @keyframes riseDock{from{opacity:0;transform:translate(-50%,10px)}to{opacity:1;transform:translate(-50%,0)}}
+        .tab-btn.active {
+            background: var(--accent);
+            color: #000;
+            border-color: var(--accent);
+            font-weight: bold;
+            box-shadow: 0 0 15px var(--accent-glow);
+        }
 
-  @media (max-width:640px){
-    header h1{font-size:12px;letter-spacing:.3em}
-    header .sub{max-width:58vw}
-  }
-</style>
+        /* Main Content */
+        .content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+            display: none;
+        }
+        .content.active { display: block; }
+
+        /* Models List */
+        .model-card {
+            background: var(--surface);
+            border: 1px solid #333;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .model-card:active {
+            transform: scale(0.98);
+            border-color: var(--accent);
+        }
+        .model-id {
+            font-family: monospace;
+            font-size: 0.85rem;
+            color: var(--accent);
+            word-break: break-all;
+        }
+        .model-info {
+            font-size: 0.75rem;
+            color: var(--subtext);
+            margin-top: 5px;
+        }
+
+        /* Chat UI */
+        #chat-messages {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            padding-bottom: 80px;
+        }
+        .msg {
+            max-width: 85%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            font-size: 0.95rem;
+            line-height: 1.4;
+            word-wrap: break-word;
+        }
+        .msg.user {
+            align-self: flex-end;
+            background: var(--accent);
+            color: #000;
+            border-bottom-right-radius: 4px;
+            font-weight: 500;
+        }
+        .msg.ai {
+            align-self: flex-start;
+            background: var(--surface);
+            border: 1px solid #333;
+            border-bottom-left-radius: 4px;
+        }
+        .msg.system {
+            align-self: center;
+            background: transparent;
+            color: var(--subtext);
+            font-size: 0.8rem;
+            font-style: italic;
+            text-align: center;
+        }
+
+        /* Input Area */
+        .input-area {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--surface);
+            padding: 10px 15px;
+            border-top: 1px solid #333;
+            display: none; 
+            gap: 10px;
+        }
+        .input-area.active { display: flex; }
+
+        #user-input {
+            flex: 1;
+            background: var(--bg);
+            border: 1px solid #444;
+            color: var(--text);
+            padding: 12px;
+            border-radius: 25px;
+            font-size: 1rem;
+            outline: none;
+        }
+        #user-input:focus { border-color: var(--accent); }
+
+        #send-btn {
+            background: var(--accent);
+            border: none;
+            color: #000;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            font-size: 1.2rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #send-btn:disabled { background: #555; cursor: not-allowed; }
+
+        /* Settings Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            padding: 20px;
+        }
+        .modal-overlay.active { display: flex; }
+
+        .modal-box {
+            background: var(--surface);
+            border: 1px solid var(--accent);
+            border-radius: 16px;
+            padding: 25px;
+            width: 100%;
+            max-width: 350px;
+            box-shadow: 0 0 30px var(--accent-glow);
+        }
+
+        .modal-box h2 {
+            color: var(--accent);
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+            text-align: center;
+        }
+
+        .modal-box p {
+            color: var(--subtext);
+            font-size: 0.8rem;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        #api-key-input {
+            width: 100%;
+            background: var(--bg);
+            border: 1px solid #444;
+            color: var(--text);
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-family: monospace;
+            outline: none;
+            margin-bottom: 20px;
+        }
+        #api-key-input:focus { border-color: var(--accent); }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .modal-buttons button {
+            flex: 1;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            border: none;
+        }
+
+        #save-key-btn {
+            background: var(--accent);
+            color: #000;
+        }
+
+        #cancel-btn {
+            background: #333;
+            color: var(--text);
+        }
+
+        /* Spinner */
+        .spinner {
+            width: 24px; height: 24px;
+            border: 3px solid #444;
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
 </head>
 <body>
-<noscript><p style="padding:2rem">This visualization requires JavaScript and WebGL.</p></noscript>
 
-<div id="loader">
-  <div class="t">MILKY WAY</div>
-  <div class="bar"></div>
-  <div class="s" id="loadSub">LINKING THREE.JS CORE</div>
-</div>
+    <!-- HEADER -->
+    <header>
+        <h1>OPENROUTER</h1>
+        <button id="settings-btn" onclick="openSettings()">⚙️</button>
+    </header>
 
-<div id="vignette"></div>
-<div id="frame"><i></i><i></i><i></i><i></i></div>
-
-<div id="ui">
-  <header>
-    <h1>MILKY WAY</h1>
-    <div class="sub" id="subTitle">PROCEDURAL ATLAS</div>
-    <div class="readout">
-      <div class="row"><label>FOCUS</label><span id="roFocus">MILKY WAY</span></div>
-      <div class="row"><label>RANGE</label><span id="roDist">—</span></div>
-      <div class="row"><label>&nbsp;</label><span id="roSub" style="font-size:8px;color:var(--dim)"></span></div>
+    <!-- TABS -->
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('models')">🔍 Models</button>
+        <button class="tab-btn" onclick="switchTab('chat')">💬 Chat</button>
     </div>
-  </header>
 
-  <div class="tools">
-    <button class="tool on" id="btnOrbits"><i></i>ORBITS</button>
-    <button class="tool" id="btnReset"><i></i>RESET</button>
-  </div>
-
-  <nav id="dock"></nav>
-
-  <div id="hint">
-    <b>DRAG</b> rotate · <b>SCROLL / PINCH</b> dive · <b>R-DRAG</b> pan<br>
-    <b>CLICK</b> a planet · <b>G</b> galaxy · <b>O</b> orbits · <b>R</b> reset
-  </div>
-</div>
-<div id="tip"></div>
-
-<script>
-/* =====================================================================
-   MILKY WAY — single file, phone-first.
-   No import maps / no ES modules: classic three.js build + CDN fallback,
-   custom touch orbit controller, staged async generation.
-===================================================================== */
-(function(){
-'use strict';
-var sub = document.getElementById('loadSub');
-
-window.addEventListener('error', function(e){
-  if(!window.__ready) sub.textContent = 'ERROR: ' + String(e.message||'script fault').slice(0,90);
-});
-
-/* ---------- boot: load three.js (UMD) with fallback CDN ---------- */
-function loadScript(url, cb){
-  var s=document.createElement('script');
-  s.src=url; s.onload=function(){cb(true);}; s.onerror=function(){cb(false);};
-  document.head.appendChild(s);
-}
-var CDNS=[
-  'https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js',
-  'https://unpkg.com/three@0.147.0/build/three.min.js',
-  'https://cdnjs.cloudflare.com/ajax/libs/three.js/0.147.0/three.min.js'
-];
-function tryLoad(i){
-  if(i>=CDNS.length){ sub.textContent='CDN UNREACHABLE — CHECK INTERNET, OR OPEN THIS FILE IN CHROME / FIREFOX'; return; }
-  loadScript(CDNS[i], function(ok){
-    if(ok && window.THREE){ start(); }
-    else tryLoad(i+1);
-  });
-}
-tryLoad(0);
-
-function start(){
-try{ main(); }catch(err){ sub.textContent='FAULT: '+String(err.message||err).slice(0,90); }
-}
-
-/* =====================================================================
-   MAIN
-===================================================================== */
-function main(){
-
-var TAU=Math.PI*2;
-var IS_COARSE = window.matchMedia && matchMedia('(pointer:coarse)').matches;
-var REDUCED   = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-var STARS  = IS_COARSE ? 120000 : 372000;
-var N_DUST = IS_COARSE ?   800 :  2400;
-var N_NEB  = IS_COARSE ?   600 :  1600;
-var N_BELT = IS_COARSE ?  1200 :  2600;
-var N_BG   = IS_COARSE ?  1600 :  3400;
-var SEG_HI = IS_COARSE ? 28 : 36, SEG_LO = IS_COARSE ? 18 : 24;
-
-var GALAXY_R=520, LY_PER_U=90, SOL_R=300, EARTH_D=5.5, AU_PER_U=1/EARTH_D, SPIN_A=8.0;
-
-/* ---------- utils ---------- */
-function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;
-  var t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;
-  return ((t^t>>>14)>>>0)/4294967296;};}
-var RND=mulberry32(20771);
-function gauss(){return (RND()+RND()+RND()-1.5)*2;}
-function clamp(v,a,b){return v<a?a:v>b?b:v;}
-function lerp(a,b,t){return a+(b-a)*t;}
-function easeIO(t){return t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;}
-function nextFrame(){return new Promise(function(r){requestAnimationFrame(function(){requestAnimationFrame(r);});});}
-
-var ARMS=4, SPIRAL=4.15;
-function armTheta(arm,r){return arm*(TAU/ARMS)+Math.log(Math.max(r,55)/55)*SPIRAL;}
-function pickArm(){var w=RND();return w<.29?0:w<.5?1:w<.79?2:3;}
-var SOL_TH0=armTheta(1,SOL_R), SOL_W=SPIN_A/(SOL_R+60);
-
-/* ---------- renderer / scene / camera ---------- */
-var renderer;
-try{
-  renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
-}catch(e){
-  sub.textContent='WEBGL NOT AVAILABLE IN THIS VIEWER — OPEN IN CHROME';
-  return;
-}
-renderer.setPixelRatio(Math.min(window.devicePixelRatio||1, IS_COARSE?1.75:2));
-renderer.setSize(innerWidth,innerHeight);
-renderer.setClearColor(0x020409,1);
-renderer.toneMapping=THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure=1.06;
-renderer.outputEncoding=THREE.sRGBEncoding;
-document.body.appendChild(renderer.domElement);
-renderer.domElement.addEventListener('contextmenu',function(e){e.preventDefault();});
-document.addEventListener('gesturestart',function(e){e.preventDefault();});
-
-var scene=new THREE.Scene();
-var camera=new THREE.PerspectiveCamera(55,innerWidth/innerHeight,0.02,42000);
-var GAL_POS=new THREE.Vector3(-190,540,990);
-camera.position.copy(GAL_POS);
-scene.add(new THREE.AmbientLight(0x33415a,0.5));
-
-/* =====================================================================
-   CUSTOM TOUCH ORBIT CONTROLLER
-   1-finger rotate · pinch zoom · 2-finger / right-drag pan · damped
-===================================================================== */
-function makeControls(cam,dom){
-  var c={
-    target:new THREE.Vector3(),
-    cur:new THREE.Spherical().setFromVector3(cam.position),
-    goal:new THREE.Spherical().setFromVector3(cam.position),
-    minD:0.35, maxD:5200, enabled:true, autoRotate:false
-  };
-  var ROT=0.0056;
-  function clampGoal(){
-    c.goal.phi=clamp(c.goal.phi,0.05,Math.PI-0.05);
-    c.goal.radius=clamp(c.goal.radius,c.minD,c.maxD);
-  }
-  c.rotate=function(dx,dy){ c.goal.theta-=dx*ROT; c.goal.phi-=dy*ROT; clampGoal(); };
-  c.zoomBy=function(f){ c.goal.radius=clamp(c.goal.radius*f,c.minD,c.maxD); };
-  c.pan=function(dx,dy){
-    var m=cam.matrix.elements, s=c.cur.radius*0.0012;
-    c.target.x+=(-dx*s)*m[0]+(dy*s)*m[4];
-    c.target.y+=(-dx*s)*m[1]+(dy*s)*m[5];
-    c.target.z+=(-dx*s)*m[2]+(dy*s)*m[6];
-  };
-  c.sync=function(){
-    c.cur.setFromVector3(cam.position.clone().sub(c.target));
-    c.goal.copy(c.cur); clampGoal();
-  };
-  c.update=function(dt){
-    if(c.autoRotate) c.goal.theta+=dt*0.045;
-    var k=1-Math.exp(-9*dt);
-    c.cur.radius+=(c.goal.radius-c.cur.radius)*k;
-    c.cur.theta +=(c.goal.theta -c.cur.theta )*k;
-    c.cur.phi   +=(c.goal.phi   -c.cur.phi   )*k;
-    cam.position.setFromSpherical(c.cur).add(c.target);
-    cam.lookAt(c.target);
-  };
-
-  var pointers=new Map(), pinchDist=null;
-  dom.style.touchAction='none';
-  dom.addEventListener('pointerdown',function(e){
-    if(!c.enabled)return;
-    try{dom.setPointerCapture(e.pointerId);}catch(_){}
-    pointers.set(e.pointerId,{x:e.clientX,y:e.clientY,button:e.button});
-    pinchDist=null;
-  });
-  dom.addEventListener('pointermove',function(e){
-    var p=pointers.get(e.pointerId);
-    if(!p||!c.enabled)return;
-    var dx=e.clientX-p.x, dy=e.clientY-p.y;
-    if(pointers.size===1){
-      if(p.button===2||p.button===1)c.pan(dx,dy); else c.rotate(dx,dy);
-      p.x=e.clientX;p.y=e.clientY;
-    }else if(pointers.size===2){
-      p.x=e.clientX;p.y=e.clientY;
-      var arr=Array.from(pointers.values());
-      var d=Math.hypot(arr[0].x-arr[1].x,arr[0].y-arr[1].y);
-      if(pinchDist&&d>0)c.zoomBy(pinchDist/d);
-      pinchDist=d;
-      c.pan(dx*0.5,dy*0.5);
-    }
-  });
-  function up(e){pointers.delete(e.pointerId);pinchDist=null;}
-  dom.addEventListener('pointerup',up);
-  dom.addEventListener('pointercancel',up);
-  dom.addEventListener('wheel',function(e){
-    if(!c.enabled)return;
-    e.preventDefault();
-    c.zoomBy(Math.exp(e.deltaY*0.0011));
-  },{passive:false});
-  return c;
-}
-var controls=makeControls(camera,renderer.domElement);
-controls.autoRotate=!REDUCED;
-
-/* =====================================================================
-   POINT SHADERS (round sprites + GPU galactic rotation)
-===================================================================== */
-var POINT_VERT=[
-'attribute float aR;','attribute float aTheta;','attribute float aY;',
-'attribute float aSize;','attribute float aAlpha;','attribute float aPhase;',
-'attribute vec3 aRand;','attribute vec3 aColor;',
-'uniform float uTime;','uniform float uScale;','uniform float uScreenH;',
-'uniform float uMaxPx;','uniform float uTwinkle;','uniform float uSpinA;',
-'varying vec3 vColor;','varying float vAlpha;','varying float vFade;',
-'void main(){',
-'  float ang = aTheta + uTime * uSpinA / (aR + 60.0);',
-'  float c = cos(ang), s = sin(ang);',
-'  vec3 p = vec3(c * aR, aY, s * aR);',
-'  p += vec3(aRand.x*c - aRand.z*s, aRand.y, aRand.x*s + aRand.z*c);',
-'  vec4 mv = modelViewMatrix * vec4(p, 1.0);',
-'  float ps = aSize * uScale / max(length(mv.xyz), 0.001);',
-'  gl_PointSize = clamp(ps, 0.6, uMaxPx);',
-'  float tw = 1.0 - uTwinkle * (0.5 - 0.5 * sin(uTime*1.9 + aPhase*41.0 + aR*0.11));',
-'  vAlpha = aAlpha * tw;','  vColor = aColor;',
-'  vFade = 1.0 - smoothstep(uScreenH*0.20, uScreenH*0.70, gl_PointSize);',
-'  gl_Position = projectionMatrix * mv;','}'
-].join('\n');
-
-var STAR_FRAG=[
-'varying vec3 vColor;','varying float vAlpha;',
-'void main(){',
-'  vec2 q = gl_PointCoord - 0.5;','  float d2 = dot(q,q);',
-'  if (d2 > 0.25) discard;',
-'  float halo = exp(-d2*12.0);','  float core = exp(-d2*44.0);',
-'  gl_FragColor = vec4(vColor * (halo*0.58 + core*0.78) * vAlpha, 1.0);','}'
-].join('\n');
-
-var CLOUD_FRAG=[
-'uniform float uSoft;',
-'varying vec3 vColor;','varying float vAlpha;','varying float vFade;',
-'void main(){',
-'  vec2 q = gl_PointCoord - 0.5;','  float d2 = dot(q,q);',
-'  if (d2 > 0.25) discard;',
-'  float a = exp(-d2*uSoft) * vAlpha * vFade;',
-'  #ifdef ADDITIVE','  gl_FragColor = vec4(vColor*a, 1.0);',
-'  #else','  gl_FragColor = vec4(vColor, a);','#endif','}'
-].join('\n');
-
-var NOISE_GLSL=[
-'float hash(vec3 p){ p=fract(p*0.3183099+0.1); p*=17.0;',
-'  return fract(p.x*p.y*p.z*(p.x+p.y+p.z)); }',
-'float vnoise(vec3 x){',
-'  vec3 i=floor(x), f=fract(x); f=f*f*(3.0-2.0*f);',
-'  return mix(',
-'    mix(mix(hash(i),hash(i+vec3(1,0,0)),f.x),',
-'        mix(hash(i+vec3(0,1,0)),hash(i+vec3(1,1,0)),f.x),f.y),',
-'    mix(mix(hash(i+vec3(0,0,1)),hash(i+vec3(1,0,1)),f.x),',
-'        mix(hash(i+vec3(0,1,1)),hash(i+vec3(1,1,1)),f.x),f.y), f.z); }',
-'float fbm(vec3 p){ float a=0.0,w=0.5;',
-'  for(int k=0;k<4;k++){ a+=w*vnoise(p); p*=2.03; w*=0.5; } return a; }'
-].join('\n');
-
-var pointMats=[];
-function makePointsMat(frag,o){
-  o=o||{};
-  var m=new THREE.ShaderMaterial({
-    vertexShader:POINT_VERT, fragmentShader:frag,
-    defines:o.additive?{ADDITIVE:''}:{},
-    uniforms:{
-      uTime:{value:0}, uScale:{value:800}, uScreenH:{value:1080},
-      uMaxPx:{value:o.maxPx!==undefined?o.maxPx:3.4},
-      uTwinkle:{value:o.twinkle||0},
-      uSpinA:{value:o.spin!==undefined?o.spin:SPIN_A},
-      uSoft:{value:o.soft!==undefined?o.soft:5.5}
-    },
-    transparent:true, depthWrite:false, depthTest:true,
-    blending:o.additive?THREE.AdditiveBlending:THREE.NormalBlending
-  });
-  pointMats.push(m); return m;
-}
-
-function buildPolarPoints(count,fill,mat,order){
-  var pos=new Float32Array(count*3),aR=new Float32Array(count),
-      aTh=new Float32Array(count),aY=new Float32Array(count),
-      aRd=new Float32Array(count*3),aSz=new Float32Array(count),
-      aCl=new Float32Array(count*3),aAl=new Float32Array(count),
-      aPh=new Float32Array(count);
-  var o={r:0,th:0,y:0,rx:0,ry:0,rz:0,size:1,cr:1,cg:1,cb:1,alpha:1,phase:0};
-  for(var i=0;i<count;i++){
-    fill(o,i);
-    pos[i*3]=o.r*Math.cos(o.th); pos[i*3+1]=o.y; pos[i*3+2]=o.r*Math.sin(o.th);
-    aR[i]=o.r; aTh[i]=o.th; aY[i]=o.y;
-    aRd[i*3]=o.rx; aRd[i*3+1]=o.ry; aRd[i*3+2]=o.rz;
-    aSz[i]=o.size; aAl[i]=o.alpha; aPh[i]=o.phase;
-    aCl[i*3]=o.cr; aCl[i*3+1]=o.cg; aCl[i*3+2]=o.cb;
-  }
-  var g=new THREE.BufferGeometry();
-  g.setAttribute('position',new THREE.BufferAttribute(pos,3));
-  g.setAttribute('aR',new THREE.BufferAttribute(aR,1));
-  g.setAttribute('aTheta',new THREE.BufferAttribute(aTh,1));
-  g.setAttribute('aY',new THREE.BufferAttribute(aY,1));
-  g.setAttribute('aRand',new THREE.BufferAttribute(aRd,3));
-  g.setAttribute('aSize',new THREE.BufferAttribute(aSz,1));
-  g.setAttribute('aColor',new THREE.BufferAttribute(aCl,3));
-  g.setAttribute('aAlpha',new THREE.BufferAttribute(aAl,1));
-  g.setAttribute('aPhase',new THREE.BufferAttribute(aPh,1));
-  var pts=new THREE.Points(g,mat);
-  pts.frustumCulled=false; pts.renderOrder=order;
-  return pts;
-}
-
-/* =====================================================================
-   GALAXY POPULATIONS
-===================================================================== */
-var PAL={
-  old:[[1,.95,.86],[1,.85,.66]], young:[[.82,.89,1],[.63,.76,1]],
-  bulge:[[1,.9,.72],[1,.72,.48]], halo:[[.98,.94,.85],[.88,.78,.68]]
-};
-function mixPal(p,t,s,out){
-  out[0]=lerp(p[0][0],p[1][0],t)*s;
-  out[1]=lerp(p[0][1],p[1][1],t)*s;
-  out[2]=lerp(p[0][2],p[1][2],t)*s;
-}
-var tmpC=[0,0,0];
-var nDisk=Math.floor(STARS*0.60), nBulge=Math.floor(STARS*0.20),
-    nBar=Math.floor(STARS*0.08),  nHalo=Math.floor(STARS*0.09),
-    nClust=STARS-nDisk-nBulge-nBar-nHalo;
-var starCursor=0, clusters=null;
-
-function starFill(o){
-  var i=starCursor++;
-  var x=0,y=0,z=0,pal=PAL.old,m=0.6,size=1;
-  if(i<nDisk){
-    var r=18+Math.pow(RND(),0.60)*(GALAXY_R-18);
-    var young=r>70&&RND()<0.20, th;
-    if(RND()<0.74) th=armTheta(pickArm(),r)+gauss()*(young?0.075:0.165);
-    else th=RND()*TAU;
-    var rr=Math.max(6,r+gauss()*6);
-    x=Math.cos(th)*rr; z=Math.sin(th)*rr;
-    y=gauss()*((2.2+15*Math.exp(-rr/210))*(young?0.45:1));
-    pal=young?PAL.young:PAL.old;
-    m=young?0.62+RND()*0.38:0.38+RND()*0.5;
-    size=0.8+RND()*1.3;
-  }else if(i<nDisk+nBulge){
-    var tight=RND()<0.18?0.42:1;
-    x=gauss()*60*tight; y=gauss()*34*tight; z=gauss()*60*tight;
-    pal=PAL.bulge; m=0.4+RND()*0.45; size=0.7+RND()*1.1;
-  }else if(i<nDisk+nBulge+nBar){
-    var x0=gauss()*92,z0=gauss()*30,ca=Math.cos(0.48),sa=Math.sin(0.48);
-    x=x0*ca-z0*sa; z=x0*sa+z0*ca; y=gauss()*16;
-    pal=PAL.bulge; m=0.35+RND()*0.42; size=0.7+RND()*1.0;
-  }else if(i<nDisk+nBulge+nBar+nHalo){
-    x=gauss()*230; y=gauss()*130; z=gauss()*230;
-    pal=PAL.halo; m=0.24+RND()*0.3; size=0.7+RND()*0.8;
-  }else{
-    if(!clusters){
-      clusters=[];
-      for(var cI=0;cI<26;cI++){
-        var vx=gauss(),vy=gauss(),vz=gauss();
-        var L=Math.hypot(vx,vy,vz)||1, rad=150+RND()*330;
-        clusters.push([vx/L*rad,vy/L*rad*0.55,vz/L*rad]);
-      }
-    }
-    var cc=clusters[(RND()*26)|0];
-    x=cc[0]+gauss()*3.4; y=cc[1]+gauss()*3.4; z=cc[2]+gauss()*3.4;
-    pal=PAL.bulge; m=0.45+RND()*0.4; size=0.6+RND()*0.9;
-  }
-  var bright=RND()<0.028;
-  mixPal(pal,RND(),clamp(m*(bright?1.65:1),0,1),tmpC);
-  o.r=Math.hypot(x,z); o.th=Math.atan2(z,x); o.y=y;
-  o.rx=gauss()*0.8; o.ry=gauss()*0.8; o.rz=gauss()*0.8;
-  o.size=size*(bright?1.9:1);
-  o.cr=tmpC[0]; o.cg=tmpC[1]; o.cb=tmpC[2];
-  o.alpha=0.45+RND()*0.5; o.phase=RND();
-}
-
-var dustCursor=0;
-function dustFill(o){
-  dustCursor++;
-  var inner=RND()<0.16;
-  var r=inner?30+RND()*95:90+Math.pow(RND(),0.8)*(GALAXY_R-120);
-  var th=inner?RND()*TAU:armTheta(pickArm(),r)-0.10+gauss()*0.05;
-  o.r=r; o.th=th; o.y=gauss()*2.4;
-  o.rx=gauss()*2; o.ry=gauss()*0.8; o.rz=gauss()*2;
-  o.size=9+RND()*26; o.alpha=0.05+RND()*(inner?0.09:0.10);
-  var t=RND();
-  o.cr=lerp(0.045,0.10,t); o.cg=lerp(0.036,0.08,t); o.cb=lerp(0.033,0.062,t);
-  o.phase=0;
-}
-var nebCursor=0;
-function nebFill(o){
-  var i=nebCursor++;
-  if(i<5){
-    var S=[[70,.085],[170,.05],[280,.032],[400,.02],[110,.06]][i];
-    o.r=0.01; o.th=RND()*TAU; o.y=(RND()-0.5)*4;
-    o.rx=0;o.ry=0;o.rz=0;
-    o.size=S[0]; o.alpha=S[1];
-    o.cr=1; o.cg=0.87; o.cb=0.68; o.phase=0; return;
-  }
-  var r=100+Math.pow(RND(),0.9)*(GALAXY_R-140);
-  o.r=r; o.th=armTheta(pickArm(),r)+gauss()*0.032; o.y=gauss()*1.9;
-  o.rx=gauss()*1.5;o.ry=gauss()*0.7;o.rz=gauss()*1.5;
-  o.size=5+RND()*15; o.alpha=0.014+RND()*0.034;
-  if(RND()<0.68){var t=RND();
-    o.cr=lerp(0.5,0.78,t); o.cg=lerp(0.6,0.84,t); o.cb=lerp(0.85,1,t);
-  }else{o.cr=0.82;o.cg=0.6;o.cb=0.62;}
-  o.phase=0;
-}
-function bgFill(o){
-  var x=gauss(),y=gauss(),z=gauss();
-  var L=Math.hypot(x,y,z)||1,R=14500;
-  x/=L;y/=L;z/=L;
-  o.r=Math.hypot(x,z)*R; o.th=Math.atan2(z*R,x*R); o.y=y*R;
-  o.rx=0;o.ry=0;o.rz=0;
-  o.size=26+RND()*38; o.alpha=0.22+RND()*0.55; o.phase=RND();
-  var w=RND();
-  if(w<0.72){o.cr=0.82;o.cg=0.87;o.cb=1.0;}
-  else if(w<0.9){o.cr=1;o.cg=0.96;o.cb=0.88;}
-  else{o.cr=1;o.cg=0.82;o.cb=0.66;}
-}
-
-/* =====================================================================
-   PROCEDURAL TEXTURES
-===================================================================== */
-function makeNoise3D(seed){
-  var s=seed>>>0||1;
-  var rnd=function(){s^=s<<13;s^=s>>>17;s^=s<<5;return (s>>>0)/4294967296;};
-  var p=new Uint8Array(256),i,j,t;
-  for(i=0;i<256;i++)p[i]=i;
-  for(i=255;i>0;i--){j=(rnd()*(i+1))|0;t=p[i];p[i]=p[j];p[j]=t;}
-  var perm=new Uint8Array(512);
-  for(i=0;i<512;i++)perm[i]=p[i&255];
-  function fade(q){return q*q*(3-2*q);}
-  function lat(X,Y,Z){return perm[(perm[(perm[X&255]+Y)&255]+Z)&255]/255;}
-  function noise(x,y,z){
-    var X=Math.floor(x),Y=Math.floor(y),Z=Math.floor(z);
-    var u=fade(x-X),v=fade(y-Y),w=fade(z-Z);
-    var x00=lat(X,Y,Z)+(lat(X+1,Y,Z)-lat(X,Y,Z))*u,
-        x10=lat(X,Y+1,Z)+(lat(X+1,Y+1,Z)-lat(X,Y+1,Z))*u,
-        x01=lat(X,Y,Z+1)+(lat(X+1,Y,Z+1)-lat(X,Y,Z+1))*u,
-        x11=lat(X,Y+1,Z+1)+(lat(X+1,Y+1,Z+1)-lat(X,Y+1,Z+1))*u;
-    var y0=x00+(x10-x00)*v, y1=x01+(x11-x01)*v;
-    return y0+(y1-y0)*w;
-  }
-  function fbm(x,y,z,oct){
-    oct=oct||4;
-    var a=0,amp=.5,f=1,n=0,o;
-    for(o=0;o<oct;o++){a+=amp*noise(x*f,y*f,z*f);n+=amp;amp*=.5;f*=2.03;}
-    return a/n;
-  }
-  return {noise:noise,fbm:fbm};
-}
-function cyl(u,v,s,vy){
-  vy=vy||2;
-  var a=u*TAU;
-  return [Math.cos(a)*s,(v-0.5)*s*vy,Math.sin(a)*s];
-}
-function paintCanvas(w,h,fn){
-  var cv=document.createElement('canvas');cv.width=w;cv.height=h;
-  var ctx=cv.getContext('2d'),img=ctx.createImageData(w,h),c=[0,0,0];
-  for(var y=0;y<h;y++){var v=y/(h-1);
-    for(var x=0;x<w;x++){var u=x/w;
-      fn(u,v,c);
-      var i=(y*w+x)*4;
-      img.data[i]=clamp(c[0],0,255);img.data[i+1]=clamp(c[1],0,255);
-      img.data[i+2]=clamp(c[2],0,255);img.data[i+3]=255;
-    }}
-  ctx.putImageData(img,0,0);return cv;
-}
-function paintCloudCanvas(w,h,fn){
-  var cv=document.createElement('canvas');cv.width=w;cv.height=h;
-  var ctx=cv.getContext('2d'),img=ctx.createImageData(w,h);
-  for(var y=0;y<h;y++){var v=y/(h-1);
-    for(var x=0;x<w;x++){var u=x/w,i=(y*w+x)*4;
-      img.data[i]=img.data[i+1]=img.data[i+2]=255;
-      img.data[i+3]=clamp(fn(u,v)*255,0,255);
-    }}
-  ctx.putImageData(img,0,0);return cv;
-}
-var maxAniso=renderer.capabilities.getMaxAnisotropy();
-function toTex(cv,srgb){
-  var t=new THREE.CanvasTexture(cv);
-  if(srgb!==false)t.encoding=THREE.sRGBEncoding;
-  t.anisotropy=Math.min(8,maxAniso);
-  t.wrapS=THREE.RepeatWrapping;
-  return t;
-}
-
-function texMercury(){
-  var N=makeNoise3D(101);
-  return toTex(paintCanvas(384,192,function(u,v,c){
-    var p=cyl(u,v,2.6);
-    var n=N.fbm(p[0],p[1],p[2],5),m=N.fbm(p[0]*3.1+7,p[1]*3.1,p[2]*3.1,4);
-    var g=0.40+0.52*n; if(m>0.60)g*=0.80; else if(m<0.33)g*=1.12;
-    c[0]=g*196;c[1]=g*186;c[2]=g*172;
-  }));
-}
-function texVenus(){
-  var N=makeNoise3D(202);
-  return toTex(paintCanvas(384,192,function(u,v,c){
-    var p=cyl(u,v,2.0);
-    var s=N.fbm(p[0]*1.2,p[1]*4.2,p[2]*1.2,4);
-    var t=clamp(s+Math.sin(v*Math.PI*5+s*4)*0.04,0,1);
-    c[0]=lerp(188,240,t);c[1]=lerp(150,222,t);c[2]=lerp(88,168,t);
-  }));
-}
-function texEarth(){
-  var N=makeNoise3D(303);
-  return toTex(paintCanvas(IS_COARSE?384:512,IS_COARSE?192:256,function(u,v,c){
-    var p=cyl(u,v,1.7),lat=Math.abs(v-0.5)*2;
-    var cont=N.fbm(p[0],p[1],p[2],5);
-    var det=N.fbm(p[0]*2.4+11.7,p[1]*2.4,p[2]*2.4,4);
-    if(cont>0.547){
-      var arid=clamp((det-0.42)*2.4,0,1)*(1-lat*lat*0.6);
-      var r=lerp(58,166,arid),g=lerp(98,140,arid),b=lerp(52,92,arid);
-      var hgt=clamp((cont-0.547)*6.5,0,1);
-      c[0]=lerp(r,148,hgt*0.55);c[1]=lerp(g,132,hgt*0.55);c[2]=lerp(b,108,hgt*0.55);
-    }else{
-      var d=clamp((0.547-cont)*7.5,0,1);
-      c[0]=lerp(26,8,d);c[1]=lerp(74,30,d);c[2]=lerp(124,62,d);
-    }
-    var ice=0.84+(det-0.5)*0.10;
-    if(lat>ice){var t=clamp((lat-ice)*9,0,1);
-      c[0]=lerp(c[0],232,t);c[1]=lerp(c[1],238,t);c[2]=lerp(c[2],244,t);}
-  }));
-}
-function texClouds(){
-  var N=makeNoise3D(304);
-  return toTex(paintCloudCanvas(IS_COARSE?384:512,IS_COARSE?192:256,function(u,v){
-    var a=u*TAU,s=2.3;
-    var n=N.fbm(Math.cos(a)*s,(v-0.5)*7.2,Math.sin(a)*s,4);
-    return clamp((n-0.52)/0.2,0,1)*0.85*(1-Math.pow(Math.abs(v-0.5)*2,4)*0.7);
-  }),false);
-}
-function texMars(){
-  var N=makeNoise3D(404);
-  return toTex(paintCanvas(384,192,function(u,v,c){
-    var p=cyl(u,v,2.6),lat=Math.abs(v-0.5)*2;
-    var n=N.fbm(p[0],p[1],p[2],5),m=N.fbm(p[0]*1.4+5,p[1]*1.4,p[2]*1.4,4);
-    var r=lerp(138,204,n),g=lerp(70,122,n),b=lerp(42,74,n);
-    if(m<0.44){r*=0.72;g*=0.7;b*=0.7;}
-    if(lat>0.90+(m-0.5)*0.06){var t=clamp((lat-0.90)*14,0,1);
-      r=lerp(r,236,t);g=lerp(g,228,t);b=lerp(b,218,t);}
-    c[0]=r;c[1]=g;c[2]=b;
-  }));
-}
-function bandedTex(seed,pal,wob,cx,dv,erx,ery,spot){
-  var N=makeNoise3D(seed);
-  return toTex(paintCanvas(IS_COARSE?384:512,IS_COARSE?192:256,function(u,v,c){
-    var p=cyl(u,v,2.2);
-    var off=(N.fbm(p[0]*1.4,p[1]*3.0,p[2]*1.4,4)-0.5)*wob;
-    var t=clamp(v+off,0,0.999);
-    var x=t*pal.length,i0=Math.min(pal.length-2,Math.floor(x));
-    var f=x-i0;f=f*f*(3-2*f);
-    c[0]=lerp(pal[i0][0],pal[i0+1][0],f);
-    c[1]=lerp(pal[i0][1],pal[i0+1][1],f);
-    c[2]=lerp(pal[i0][2],pal[i0+1][2],f);
-    if(spot){
-      var ddu=Math.abs(u-cx);ddu=Math.min(ddu,1-ddu);
-      var e=(ddu/erx)*(ddu/erx)+((v-dv)/ery)*((v-dv)/ery);
-      if(e<1){var s=Math.pow(1-e,0.7);
-        c[0]=lerp(c[0],spot[0],s*0.8);c[1]=lerp(c[1],spot[1],s*0.8);c[2]=lerp(c[2],spot[2],s*0.8);}
-      else if(e<1.6){var s2=(1.6-e)/0.6*0.25;
-        c[0]+=s2*40;c[1]+=s2*30;c[2]+=s2*22;}
-    }
-  }));
-}
-function texJupiter(){
-  return bandedTex(505,[
-    [224,212,188],[176,142,102],[236,226,206],[158,116,80],[226,210,182],
-    [190,148,104],[240,232,214],[148,104,72],[214,196,166],[182,138,96]
-  ],0.085,0.72,0.60,0.055,0.028,[186,82,56]);
-}
-function texSaturn(){
-  return bandedTex(606,[
-    [232,220,186],[214,196,152],[240,230,200],
-    [204,182,138],[226,214,178],[196,172,130]
-  ],0.045);
-}
-function texUranus(){
-  var N=makeNoise3D(707);
-  return toTex(paintCanvas(256,128,function(u,v,c){
-    var p=cyl(u,v,1.6);
-    var n=N.fbm(p[0],p[1],p[2],3);
-    var t=v+(n-0.5)*0.05;
-    c[0]=lerp(148,172,t);c[1]=lerp(196,212,t);c[2]=lerp(204,218,t);
-  }));
-}
-function texNeptune(){
-  var N=makeNoise3D(808);
-  return toTex(paintCanvas(384,192,function(u,v,c){
-    var p=cyl(u,v,2.0);
-    var n=N.fbm(p[0]*1.3,p[1]*2.6,p[2]*1.3,4);
-    var t=clamp(v+(n-0.5)*0.06,0,1);
-    var r=lerp(48,74,t),g=lerp(80,112,t),b=lerp(152,192,t);
-    var w=N.fbm(p[0]*4,p[1]*10,p[2]*4,3);
-    if(w>0.74){var s=(w-0.74)*3;r=lerp(r,225,s);g=lerp(g,232,s);b=lerp(b,240,s);}
-    var ddu=Math.abs(u-0.3);ddu=Math.min(ddu,1-ddu);
-    var e=(ddu/0.05)*(ddu/0.05)+((v-0.42)/0.03)*((v-0.42)/0.03);
-    if(e<1){var s2=(1-e)*0.45;r*=1-s2*0.5;g*=1-s2*0.5;b*=1-s2*0.35;}
-    c[0]=r;c[1]=g;c[2]=b;
-  }));
-}
-function texMoon(){
-  var N=makeNoise3D(909);
-  return toTex(paintCanvas(192,96,function(u,v,c){
-    var p=cyl(u,v,3.0);
-    var n=N.fbm(p[0],p[1],p[2],4);
-    var g=0.5+0.8*(n-0.5);
-    c[0]=g*188;c[1]=g*184;c[2]=g*178;
-  }));
-}
-function texRings(){
-  var N=makeNoise3D(610);
-  var cv=document.createElement('canvas');cv.width=1024;cv.height=16;
-  var ctx=cv.getContext('2d'),img=ctx.createImageData(1024,16);
-  function dip(t,c,w){var q=(t-c)/w;return Math.exp(-q*q);}
-  for(var x=0;x<1024;x++){
-    var t=x/1023,n=N.noise(t*170,3.7,1.1);
-    var a=0.85*(0.5+0.5*n);
-    a*=clamp(t/0.06,0,1);
-    a*=1-clamp((t-0.94)/0.06,0,1);
-    a*=1-0.93*dip(t,0.635,0.030);
-    a*=1-0.55*dip(t,0.335,0.012);
-    a*=1-0.40*dip(t,0.805,0.008);
-    a*=0.35+0.65*clamp((t-0.06)/0.24,0,1);
-    var b=lerp(138,236,0.35+0.5*n);
-    for(var y=0;y<16;y++){var i=(y*1024+x)*4;
-      img.data[i]=b;img.data[i+1]=b*0.93;img.data[i+2]=b*0.78;
-      img.data[i+3]=clamp(a,0,1)*240;}
-  }
-  ctx.putImageData(img,0,0);
-  return toTex(cv);
-}
-function texGlow(){
-  var cv=document.createElement('canvas');cv.width=cv.height=256;
-  var ctx=cv.getContext('2d');
-  var g=ctx.createRadialGradient(128,128,0,128,128,128);
-  g.addColorStop(0,'rgba(255,255,255,0.9)');
-  g.addColorStop(0.22,'rgba(255,255,255,0.32)');
-  g.addColorStop(0.55,'rgba(255,255,255,0.07)');
-  g.addColorStop(1,'rgba(255,255,255,0)');
-  ctx.fillStyle=g;ctx.fillRect(0,0,256,256);
-  return toTex(cv,false);
-}
-
-/* =====================================================================
-   SOLAR SYSTEM
-===================================================================== */
-var solar=new THREE.Group();
-solar.rotation.x=-1.03;
-scene.add(solar);
-
-var SUN_R=1.7;
-solar.add(new THREE.PointLight(0xffe2bb,2.4,0,0));
-
-var sunMat=new THREE.ShaderMaterial({
-  uniforms:{uTime:{value:0}},
-  vertexShader:[
-    'varying vec3 vPo; varying vec3 vNv;',
-    'void main(){',
-    '  vPo = normalize(position);',
-    '  vNv = normalize(normalMatrix * normal);',
-    '  gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0);','}'
-  ].join('\n'),
-  fragmentShader:[
-    'uniform float uTime;','varying vec3 vPo; varying vec3 vNv;',
-    NOISE_GLSL,
-    'void main(){',
-    '  vec3 p = vPo * 2.7;',
-    '  float n1 = fbm(p + vec3(uTime*0.017, uTime*0.006, -uTime*0.011));',
-    '  float n2 = fbm(p*3.1 + vec3(-uTime*0.013, 0.0, uTime*0.02));',
-    '  float m = n1*0.72 + n2*0.28;',
-    '  vec3 col = mix(vec3(0.98,0.34,0.05), vec3(1.0,0.83,0.52), smoothstep(0.26,0.74,m));',
-    '  col += vec3(1.0,0.6,0.25) * smoothstep(0.68,0.9,m) * 0.5;',
-    '  float ndv = clamp(dot(normalize(vNv), vec3(0.0,0.0,1.0)), 0.0, 1.0);',
-    '  float limb = 0.42 + 0.58 * pow(ndv, 0.6);',
-    '  gl_FragColor = vec4(col * limb * 1.12, 1.0);','}'
-  ].join('\n')
-});
-var sunMesh=new THREE.Mesh(new THREE.SphereGeometry(SUN_R,IS_COARSE?40:48,IS_COARSE?22:28),sunMat);
-solar.add(sunMesh);
-
-var GLOW_VERT=[
-  'varying vec3 vN; varying vec3 vP;',
-  'void main(){',
-  '  vN = normalize(normalMatrix * normal);',
-  '  vec4 mv = modelViewMatrix * vec4(position,1.0);',
-  '  vP = mv.xyz; gl_Position = projectionMatrix * mv;','}'
-].join('\n');
-var GLOW_FRAG=[
-  'uniform vec3 uColor; uniform float uPow; uniform float uInt;',
-  'varying vec3 vN; varying vec3 vP;',
-  'void main(){',
-  '  float rim = pow(1.0 - clamp(dot(normalize(-vP), normalize(vN)),0.0,1.0), uPow);',
-  '  gl_FragColor = vec4(uColor * rim * uInt, 1.0);','}'
-].join('\n');
-function glowShell(radius,color,pow,intensity){
-  var m=new THREE.Mesh(
-    new THREE.SphereGeometry(radius,32,20),
-    new THREE.ShaderMaterial({
-      uniforms:{uColor:{value:new THREE.Color(color)},uPow:{value:pow},uInt:{value:intensity}},
-      vertexShader:GLOW_VERT,fragmentShader:GLOW_FRAG,
-      transparent:true,depthWrite:false,blending:THREE.AdditiveBlending
-    }));
-  return m;
-}
-var sunShell=glowShell(SUN_R*1.5,'#ff9a45',3.2,0.85);
-sunShell.renderOrder=5;solar.add(sunShell);
-
-var glowTex=texGlow();
-function coronaSprite(scale,opacity,color){
-  var s=new THREE.Sprite(new THREE.SpriteMaterial({
-    map:glowTex,color:color,transparent:true,opacity:opacity,
-    blending:THREE.AdditiveBlending,depthWrite:false}));
-  s.scale.set(scale,scale,1);s.renderOrder=6;solar.add(s);return s;
-}
-var corona1=coronaSprite(7.5,0.4,0xffc98a);
-var corona2=coronaSprite(17,0.22,0xffb46b);
-
-var YEAR_S=40,DAY_S=10;
-var PLANETS=[
- {k:'mercury',name:'MERCURY',r:0.13,au:0.387,T:0.241,day:58.6,tilt:0.5,incl:7.0,dot:'#9c9288',tex:texMercury},
- {k:'venus',name:'VENUS',r:0.21,au:0.723,T:0.615,day:243,tilt:177,incl:3.4,dot:'#e3c47f',tex:texVenus},
- {k:'earth',name:'EARTH',r:0.22,au:1.0,T:1.0,day:1.0,tilt:23.4,incl:0.0,dot:'#5c86c4',tex:texEarth},
- {k:'mars',name:'MARS',r:0.16,au:1.524,T:1.881,day:1.03,tilt:25.2,incl:1.85,dot:'#c46a45',tex:texMars},
- {k:'jupiter',name:'JUPITER',r:0.72,au:5.203,T:11.86,day:0.414,tilt:3.1,incl:1.3,dot:'#d2ae83',tex:texJupiter},
- {k:'saturn',name:'SATURN',r:0.62,au:9.537,T:29.45,day:0.444,tilt:26.7,incl:2.49,dot:'#e0c896',tex:texSaturn,rings:[1.35,2.35]},
- {k:'uranus',name:'URANUS',r:0.38,au:19.19,T:84.02,day:0.718,tilt:97.8,incl:0.77,dot:'#9fd0d6',tex:texUranus,rings:[1.55,1.72],faintRings:true},
- {k:'neptune',name:'NEPTUNE',r:0.37,au:30.07,T:164.8,day:0.671,tilt:28.3,incl:1.77,dot:'#5f7fd0',tex:texNeptune}
-];
-
-var bodies=[],orbitLines=[],pickables=[];
-var pickMat=new THREE.MeshBasicMaterial({visible:false});
-bodies.push({k:'sun',name:'SOL',r:SUN_R,node:sunMesh});
-var cloudsMesh=null,earthAnchor=null;
-
-function buildSolarSystem(){
-  PLANETS.forEach(function(P,idx){
-    P.dist=EARTH_D*Math.pow(P.au,0.62);
-    P.wOrb=TAU/(P.T*YEAR_S);
-    P.wSpin=TAU/(P.day*DAY_S);
-    P.phase=idx*2.39996;
-
-    var incline=new THREE.Group();
-    incline.rotation.set(THREE.MathUtils.degToRad(P.incl),idx*1.7,0);
-    solar.add(incline);
-
-    var pts=[];
-    for(var i=0;i<160;i++){var a=i/160*TAU;
-      pts.push(new THREE.Vector3(Math.cos(a)*P.dist,0,Math.sin(a)*P.dist));}
-    var line=new THREE.LineLoop(
-      new THREE.BufferGeometry().setFromPoints(pts),
-      new THREE.LineBasicMaterial({color:0x9db2d8,transparent:true,opacity:0.13,depthWrite:false}));
-    line.renderOrder=4;incline.add(line);orbitLines.push(line);
-
-    var anchor=new THREE.Group();incline.add(anchor);
-    var tiltG=new THREE.Group();
-    tiltG.rotation.z=THREE.MathUtils.degToRad(P.tilt);
-    anchor.add(tiltG);
-
-    var mat=new THREE.MeshPhongMaterial({
-      map:P.tex(),shininess:P.k==='earth'?16:5,
-      specular:new THREE.Color(P.k==='earth'?0x2a4a66:0x141414)});
-    var mesh=new THREE.Mesh(new THREE.SphereGeometry(P.r,SEG_HI,SEG_LO),mat);
-    tiltG.add(mesh);
-
-    if(P.k==='earth'){
-      earthAnchor=anchor;
-      cloudsMesh=new THREE.Mesh(
-        new THREE.SphereGeometry(P.r*1.02,SEG_HI,SEG_LO),
-        new THREE.MeshLambertMaterial({map:texClouds(),transparent:true,depthWrite:false,opacity:0.92}));
-      tiltG.add(cloudsMesh);
-      var atm=glowShell(P.r*1.08,'#5f8fe8',3.0,0.75);
-      atm.renderOrder=5;anchor.add(atm);
-      var pivot=new THREE.Group();anchor.add(pivot);
-      var moon=new THREE.Mesh(new THREE.SphereGeometry(0.06,16,12),
-        new THREE.MeshLambertMaterial({map:texMoon()}));
-      moon.position.x=0.62;pivot.add(moon);
-      anchor.userData.moonPivot=pivot;
-    }
-
-    if(P.rings){
-      var inner=P.r*P.rings[0],outer=P.r*P.rings[1];
-      var rg=new THREE.RingGeometry(inner,outer,140,1);
-      var rp=rg.attributes.position,ruv=rg.attributes.uv;
-      for(var q=0;q<rp.count;q++){
-        var rr=Math.hypot(rp.getX(q),rp.getY(q));
-        ruv.setXY(q,(rr-inner)/(outer-inner),0.5);
-      }
-      var ringMat=P.faintRings
-        ? new THREE.MeshBasicMaterial({color:0x9fb4bb,transparent:true,opacity:0.16,side:THREE.DoubleSide,depthWrite:false})
-        : new THREE.MeshLambertMaterial({map:texRings(),transparent:true,side:THREE.DoubleSide,depthWrite:false});
-      var ring=new THREE.Mesh(rg,ringMat);
-      ring.rotation.x=-Math.PI/2;tiltG.add(ring);
-    }
-
-    var pick=new THREE.Mesh(new THREE.SphereGeometry(Math.max(P.r*2.8,0.5),8,6),pickMat);
-    anchor.add(pick);
-
-    var body={k:P.k,name:P.name,r:P.r,node:anchor,
-      dist:P.dist,wOrb:P.wOrb,wSpin:P.wSpin,phase:P.phase,mesh:mesh};
-    bodies.push(body);
-    pick.userData.body=body;
-    pickables.push(pick);
-  });
-  var sunPick=new THREE.Mesh(new THREE.SphereGeometry(SUN_R*2,8,6),pickMat);
-  sunPick.userData.body=bodies[0];solar.add(sunPick);pickables.push(sunPick);
-
-  /* asteroid belt */
-  var beltMat=makePointsMat(STAR_FRAG,{additive:true,maxPx:2.4,twinkle:0,spin:0});
-  var bRND=mulberry32(777);
-  belt=buildPolarPoints(N_BELT,function(o){
-    var r=10.6+bRND()*2.8+(bRND()-0.5)*0.6;
-    o.r=r;o.th=bRND()*TAU;o.y=(bRND()+bRND()-1)*0.35;
-    o.rx=0;o.ry=0;o.rz=0;
-    o.size=0.05+bRND()*0.07;
-    o.alpha=0.45+bRND()*0.45;o.phase=0;
-    var g=0.45+bRND()*0.3;
-    o.cr=g;o.cg=g*0.94;o.cb=g*0.85;
-  },beltMat,1);
-  belt.rotation.x=0.03;
-  solar.add(belt);
-}
-var belt=null;
-
-/* =====================================================================
-   FLIGHTS / FOLLOW / PICKING
-===================================================================== */
-var flight=null,follow=null,interacted=false,orbitsOn=true;
-var prevF=new THREE.Vector3(),_t1=new THREE.Vector3(),_p1=new THREE.Vector3();
-
-function startFlight(body,vec,dur){
-  follow=null;
-  flight={body:body,
-    off:body?vec.clone():null,
-    abs:body?null:vec.clone(),
-    t:0,dur:dur||2.3,
-    fromP:camera.position.clone(),fromT:controls.target.clone()};
-  controls.enabled=false;
-  controls.autoRotate=false;
-}
-function focusBody(b){
-  b.node.getWorldPosition(_t1);
-  var dir=camera.position.clone().sub(_t1);
-  if(dir.lengthSq()<1e-6)dir.set(0,0.4,1);
-  dir.normalize();dir.y+=0.30;dir.normalize();
-  var dist=Math.max(b.r*5.6,b.r+0.5);
-  startFlight(b,dir.multiplyScalar(dist));
-  setActive(b.k);
-}
-function focusGalaxy(){startFlight(null,GAL_POS);setActive('galaxy');}
-function cancelFlight(){if(flight){flight=null;controls.enabled=true;}}
-
-var raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2();
-var pointerDirty=false,px=0,py=0,downX=0,downY=0;
-var tip=document.getElementById('tip');
-var dom=renderer.domElement;
-
-dom.addEventListener('pointerdown',function(e){
-  downX=e.clientX;downY=e.clientY;
-  interacted=true;controls.autoRotate=false;
-  cancelFlight();
-  hintEl.classList.add('gone');
-});
-dom.addEventListener('pointermove',function(e){
-  px=e.clientX;py=e.clientY;pointerDirty=true;
-});
-dom.addEventListener('pointerup',function(e){
-  if(Math.hypot(e.clientX-downX,e.clientY-downY)>6)return;
-  pointer.set((e.clientX/innerWidth)*2-1,-(e.clientY/innerHeight)*2+1);
-  raycaster.setFromCamera(pointer,camera);
-  var hit=raycaster.intersectObjects(pickables,false)[0];
-  if(hit)focusBody(hit.object.userData.body);
-});
-
-/* =====================================================================
-   UI
-===================================================================== */
-var dock=document.getElementById('dock');
-var hintEl=document.getElementById('hint');
-var roFocus=document.getElementById('roFocus');
-var roDist=document.getElementById('roDist');
-var roSub=document.getElementById('roSub');
-var chipEls={};
-var DOT={sun:'#ffc26e',mercury:'#9c9288',venus:'#e3c47f',earth:'#5c86c4',mars:'#c46a45',
-  jupiter:'#d2ae83',saturn:'#e0c896',uranus:'#9fd0d6',neptune:'#5f7fd0'};
-
-function addChip(label,key){
-  var b=document.createElement('button');
-  b.className='chip'+(key==='galaxy'?' gal':'');
-  b.innerHTML=(DOT[key]?'<i style="background:'+DOT[key]+'"></i>':'')+label;
-  b.addEventListener('click',function(){
-    if(key==='galaxy')focusGalaxy();
-    else{
-      for(var i=0;i<bodies.length;i++)if(bodies[i].k===key){focusBody(bodies[i]);break;}
-    }
-  });
-  dock.appendChild(b);chipEls[key]=b;
-}
-function setActive(k){
-  for(var key in chipEls)chipEls[key].classList.toggle('active',key===k);
-}
-
-var btnOrbits=document.getElementById('btnOrbits');
-btnOrbits.addEventListener('click',function(){
-  orbitsOn=!orbitsOn;btnOrbits.classList.toggle('on',orbitsOn);
-});
-document.getElementById('btnReset').addEventListener('click',focusGalaxy);
-
-addEventListener('keydown',function(e){
-  var k=e.key.toLowerCase();
-  if(k==='g'||k==='escape'||k==='r')focusGalaxy();
-  else if(k==='o')btnOrbits.click();
-  else if(k==='0'||k==='s')focusBody(bodies[0]);
-  else if(k>='1'&&k<='8'){
-    for(var i=0;i<bodies.length;i++)
-      if(bodies[i].k===PLANETS[+k-1].k){focusBody(bodies[i]);break;}
-  }
-});
-
-document.getElementById('subTitle').textContent=
-  'PROCEDURAL ATLAS · '+STARS.toLocaleString('en-US')+' STARS · SOL — ORION SPUR, 8.3 kpc';
-
-function updateCamUniforms(){
-  var h=renderer.domElement.height;
-  var s=h/(2*Math.tan(THREE.MathUtils.degToRad(camera.fov)*0.5));
-  pointMats.forEach(function(m){m.uniforms.uScale.value=s;m.uniforms.uScreenH.value=h;});
-}
-addEventListener('resize',function(){
-  camera.aspect=innerWidth/innerHeight;
-  camera.fov=camera.aspect<0.75?62:55;
-  camera.updateProjectionMatrix();
-  renderer.setSize(innerWidth,innerHeight);
-  updateCamUniforms();
-});
-
-/* =====================================================================
-   STAGED BUILD + LOOP
-===================================================================== */
-var starMat=makePointsMat(STAR_FRAG,{additive:true,maxPx:3.4,twinkle:0.30});
-var dustMat=makePointsMat(CLOUD_FRAG,{additive:false,maxPx:340,soft:5.6});
-var nebMat =makePointsMat(CLOUD_FRAG,{additive:true,maxPx:340,soft:5.0});
-var bgMat  =makePointsMat(STAR_FRAG,{additive:true,maxPx:2.6,twinkle:0.16,spin:0});
-
-var clock=new THREE.Clock(),frames=0,roTick=0;
-var loader=document.getElementById('loader');
-
-function tick(){
-  requestAnimationFrame(tick);
-  var dt=Math.min(clock.getDelta(),0.05),t=clock.elapsedTime;
-
-  starMat.uniforms.uTime.value=t;
-  dustMat.uniforms.uTime.value=t;
-  nebMat.uniforms.uTime.value=t;
-  bgMat.uniforms.uTime.value=t;
-  if(belt)belt.rotation.y=t*0.012;
-  sunMat.uniforms.uTime.value=t;
-
-  var sAng=SOL_TH0+t*SOL_W;
-  solar.position.set(Math.cos(sAng)*SOL_R,0,Math.sin(sAng)*SOL_R);
-
-  for(var i=1;i<bodies.length;i++){
-    var b=bodies[i];
-    var a=b.phase+t*b.wOrb;
-    b.node.position.set(Math.cos(a)*b.dist,0,Math.sin(a)*b.dist);
-    b.mesh.rotation.y=t*b.wSpin;
-  }
-  if(cloudsMesh){
-    var eb=null;
-    for(var j=1;j<bodies.length;j++)if(bodies[j].k==='earth')eb=bodies[j];
-    cloudsMesh.rotation.y=t*eb.wSpin*1.28;
-  }
-  if(earthAnchor&&earthAnchor.userData.moonPivot)
-    earthAnchor.userData.moonPivot.rotation.y=0.8+t*TAU/273;
-  sunMesh.rotation.y=t*0.05;
-
-  var dSun=camera.position.distanceTo(solar.position);
-  var near=clamp((dSun-4)/7,0,1);
-  corona1.material.opacity=0.4*(0.15+0.85*near)*(0.92+0.08*Math.sin(t*1.3));
-  corona2.material.opacity=0.22*(0.15+0.85*near)*(0.9+0.1*Math.sin(t*0.9+2));
-  sunShell.material.uniforms.uInt.value=0.85*(0.25+0.75*near);
-
-  for(var L=0;L<orbitLines.length;L++)orbitLines[L].visible=orbitsOn&&dSun<340;
-
-  var dT=camera.position.distanceTo(controls.target);
-  var nearP=Math.max(0.02,dT*0.0007);
-  if(Math.abs(nearP-camera.near)>camera.near*0.03){
-    camera.near=nearP;camera.updateProjectionMatrix();
-  }
-  controls.minD=follow?Math.max(follow.r*1.12,0.09):0.35;
-
-  if(flight){
-    flight.t+=dt;
-    var k=easeIO(clamp(flight.t/flight.dur,0,1));
-    if(flight.body){flight.body.node.getWorldPosition(_t1);_p1.copy(_t1).add(flight.off);}
-    else{_t1.set(0,0,0);_p1.copy(flight.abs);}
-    camera.position.lerpVectors(flight.fromP,_p1,k);
-    controls.target.lerpVectors(flight.fromT,_t1,k);
-    if(flight.t>=flight.dur){
-      if(flight.body){follow=flight.body;flight.body.node.getWorldPosition(prevF);}
-      flight=null;controls.enabled=true;controls.sync();
-    }
-  }else if(follow){
-    follow.node.getWorldPosition(_t1);
-    _p1.copy(_t1).sub(prevF);
-    camera.position.add(_p1);
-    controls.target.copy(_t1);
-    prevF.copy(_t1);
-    controls.sync();
-    if(dT>900)follow=null;
-    controls.update(dt);
-  }else{
-    controls.update(dt);
-  }
-
-  if(pointerDirty&&!IS_COARSE){
-    pointerDirty=false;
-    if(dSun<420){
-      pointer.set((px/innerWidth)*2-1,-(py/innerHeight)*2+1);
-      raycaster.setFromCamera(pointer,camera);
-      var hit=raycaster.intersectObjects(pickables,false)[0];
-      if(hit){
-        tip.textContent=hit.object.userData.body.name;
-        tip.style.left=px+'px';tip.style.top=py+'px';tip.style.opacity=1;
-      }else tip.style.opacity=0;
-    }else tip.style.opacity=0;
-  }
-
-  renderer.render(scene,camera);
-
-  if(++roTick%7===0){
-    var f=follow||(flight&&flight.body);
-    roFocus.textContent=f?f.name:'MILKY WAY';
-    if(f||dSun<340){
-      var au=camera.position.distanceTo(controls.target)*AU_PER_U;
-      roDist.innerHTML='<b>'+(au>=0.05?au.toFixed(2)+' AU':(au*149.6).toFixed(1)+' M km')+'</b>';
-      roSub.textContent=f?'RANGE TO '+f.name:'FROM SOL';
-    }else{
-      roDist.innerHTML='<b>'+(dT*LY_PER_U/1000).toFixed(1)+' kly</b>';
-      roSub.textContent='FROM GALACTIC CORE';
-    }
-  }
-  if(++frames===2){loader.classList.add('done');window.__ready=true;}
-}
-
-/* ---- async staged boot so the loader visibly progresses on phones ---- */
-(function boot(){
-  sub.textContent='SEEDING '+STARS.toLocaleString('en-US')+' STARS';
-  nextFrame().then(function(){
-    scene.add(buildPolarPoints(STARS,starFill,starMat,0));
-    scene.add(buildPolarPoints(N_DUST,dustFill,dustMat,2));
-    scene.add(buildPolarPoints(N_NEB,nebFill,nebMat,3));
-    scene.add(buildPolarPoints(N_BG,bgFill,bgMat,0));
-    sub.textContent='PAINTING WORLDS';
-    return nextFrame();
-  }).then(function(){
-    buildSolarSystem();
-    addChip('GALAXY','galaxy');
-    bodies.forEach(function(b){addChip(b.name,b.k);});
-    setActive('galaxy');
-    updateCamUniforms();
-    controls.sync();
-    setTimeout(function(){hintEl.classList.add('gone');},12000);
-    tick();
-  });
-})();
-
-} /* main */
-})();
-</script>
+    <!-- TAB 1: MODELS -->
+    <div id="models-tab" class="content active">
+        <p style="color: var(--subtext); font-size: 0.8rem; margin-bottom: 15px; text-align: center;">
+            Tap any model to select it for chatting.
+        </p>
+        <div id="models-list">
+            <p style="text-align:center; color:var(--subtext);">Click ⚙️ to add your API Key first.</p>
+        </div>
+    </div>
+
+    <!-- TAB 2: CHAT -->
+    <div id="chat-tab" class="content">
+        <div id="chat-messages">
+            <div class="msg system">Select a model first, then start chatting!</div>
+        </div>
+    </div>
+
+    <!-- CHAT INPUT -->
+    <div id="input-area" class="input-area">
+        <input type="text" id="user-input" placeholder="Type a message..." autocomplete="off">
+        <button id="send-btn" onclick="sendMessage()">➤</button>
+    </div>
+
+    <!-- SETTINGS MODAL -->
+    <div id="settings-modal" class="modal-overlay">
+        <div class="modal-box">
+            <h2>⚙️ API Settings</h2>
+            <p>Enter your OpenRouter API Key. It will be saved locally on your phone.</p>
+            <input type="text" id="api-key-input" placeholder="sk-or-v1-..." autocomplete="off">
+            <div class="modal-buttons">
+                <button id="cancel-btn" onclick="closeSettings()">Cancel</button>
+                <button id="save-key-btn" onclick="saveKey()">Save Key</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let API_KEY = localStorage.getItem('openrouter_key') || '';
+        let selectedModel = "meta-llama/llama-3.1-8b-instruct:free"; 
+        let chatHistory = [];
+
+        // --- SETTINGS MODAL ---
+        function openSettings() {
+            document.getElementById('settings-modal').classList.add('active');
+            document.getElementById('api-key-input').value = API_KEY;
+        }
+
+        function closeSettings() {
+            document.getElementById('settings-modal').classList.remove('active');
+        }
+
+        function saveKey() {
+            const input = document.getElementById('api-key-input').value.trim();
+            if (input) {
+                API_KEY = input;
+                localStorage.setItem('openrouter_key', API_KEY);
+                closeSettings();
+                addMessage("✅ API Key Saved Successfully!", 'system');
+                fetchModels(); // Auto-fetch models after saving key
+            } else {
+                alert("Please enter a valid API Key.");
+            }
+        }
+
+        // --- TAB SWITCHING ---
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
+            document.getElementById('input-area').classList.remove('active');
+
+            if (tab === 'models') {
+                document.querySelectorAll('.tab-btn')[0].classList.add('active');
+                document.getElementById('models-tab').classList.add('active');
+            } else {
+                document.querySelectorAll('.tab-btn')[1].classList.add('active');
+                document.getElementById('chat-tab').classList.add('active');
+                document.getElementById('input-area').classList.add('active');
+                document.getElementById('user-input').focus();
+            }
+        }
+
+        // --- FETCH MODELS ---
+        async function fetchModels() {
+            if (!API_KEY) {
+                document.getElementById('models-list').innerHTML = `<p style="text-align:center; color:red;">Please add API Key first!</p>`;
+                return;
+            }
+
+            const listEl = document.getElementById('models-list');
+            listEl.innerHTML = '<div class="spinner"></div>';
+
+            try {
+                const res = await fetch("https://openrouter.ai/api/v1/models", {
+                    headers: { "Authorization": "Bearer " + API_KEY }
+                });
+                const data = await res.json();
+                
+                // Filter free models
+                let models = data.data.filter(m => m.id.includes(':free') || (m.pricing && parseFloat(m.pricing.prompt) === 0));
+                if (models.length === 0) models = data.data.slice(0, 30); 
+
+                listEl.innerHTML = '';
+                models.forEach(m => {
+                    const card = document.createElement('div');
+                    card.className = 'model-card';
+                    card.innerHTML = `
+                        <div class="model-id">${m.id}</div>
+                        <div class="model-info">Context: ${m.context_length || 'Unknown'} tokens</div>
+                    `;
+                    card.onclick = () => {
+                        selectedModel = m.id;
+                        addMessage(`✅ Switched to: <b style="color:var(--accent)">${m.id}</b>`, 'system');
+                        switchTab('chat');
+                    };
+                    listEl.appendChild(card);
+                });
+            } catch (err) {
+                listEl.innerHTML = `<p style="color:red; text-align:center;">Error fetching models. Check API Key.</p>`;
+            }
+        }
+
+        // --- CHAT FUNCTIONALITY ---
+        function addMessage(text, type) {
+            const msgEl = document.createElement('div');
+            msgEl.className = `msg ${type}`;
+            msgEl.innerHTML = text;
+            document.getElementById('chat-messages').appendChild(msgEl);
+            msgEl.scrollIntoView({ behavior: 'smooth' });
+            return msgEl;
+        }
+
+        async function sendMessage() {
+            if (!API_KEY) {
+                alert("Please add your API Key in settings first!");
+                openSettings();
+                return;
+            }
+
+            const input = document.getElementById('user-input');
+            const text = input.value.trim();
+            if (!text) return;
+
+            input.value = '';
+            addMessage(text, 'user');
+            chatHistory.push({ role: "user", content: text });
+
+            const sendBtn = document.getElementById('send-btn');
+            sendBtn.disabled = true;
+            const loader = addMessage('<div class="spinner" style="width:16px;height:16px;border-width:2px;"></div>', 'ai');
+
+            try {
+                const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+                    method: "POST",
+                    headers: {
+                        "Authorization": "Bearer " + API_KEY,
+                        "Content-Type": "application/json",
+                        "HTTP-Referer": "http://localhost",
+                        "X-Title": "Ayush Mobile Tester"
+                    },
+                    body: JSON.stringify({
+                        model: selectedModel,
+                        messages: chatHistory
+                    })
+                });
+
+                const data = await res.json();
+                loader.remove();
+
+                if (data.error) {
+                    addMessage(`❌ Error: ${data.error.message}`, 'system');
+                } else {
+                    const aiText = data.choices[0].message.content;
+                    addMessage(aiText, 'ai');
+                    chatHistory.push({ role: "assistant", content: aiText });
+                }
+            } catch (err) {
+                loader.remove();
+                addMessage("❌ Network error. Check connection.", 'system');
+            }
+
+            sendBtn.disabled = false;
+        }
+
+        document.getElementById('user-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage();
+        });
+
+        // --- INITIALIZATION ---
+        window.onload = () => {
+            if (!API_KEY) {
+                // If no key is saved, open settings automatically on first launch
+                openSettings();
+            } else {
+                fetchModels();
+            }
+        };
+    </script>
 </body>
 </html>
