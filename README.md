@@ -14,36 +14,35 @@ Then visit <http://localhost:8000>.
 
 ## Customize the page
 
-The visible page is in `index.html`. You can revise its wording and presentation there, but take care not to remove or rename the model selector, API-key field, or chat area if you still want to use the tester. This repository has no separate asset directory in its listed root files; if you add local assets, keep their paths relative to `index.html` correct.
+The visible page is in `index.html`. You can revise its wording and presentation there, but take care not to remove or rename the model selector, API-key field, or chat area if you still want to use the tester. The listed root files include no separate asset directory; if you add local assets, keep their paths relative to `index.html` correct.
 
 ## API key safety
 
 Use only your own API key. Do not put it in source code, commit it, or expose it in screenshots. Check OpenRouter’s current settings and usage terms before sending requests; model usage may incur charges. Do not publish or share your key.
 
-## Asset and loading review checklist
+## Browser and platform reliability review checklist
 
-This is a checklist of actions to perform, not a record of verified results.
+This is a checklist for a future review, not a record of completed testing or verified results.
 
-- Inspect `index.html` for local images, fonts, stylesheets, audio, or other referenced files. Confirm each local path resolves; if you add assets, remove files only after confirming they are unused.
-- Keep any added media sized for its use in the page, rather than including unnecessarily large originals or multiple unused copies.
-- Review HTML references and inline styles for external font or script requests. Confirm each external dependency is intentional and check that the form and chat area remain usable if an optional resource is unavailable.
-- The tester's request behavior is separate from page assets: before sending a request, follow the API key safety guidance above.
+- Review the page in current desktop browsers relevant to your audience and on mobile browsers such as Safari on iOS and Chrome on Android where applicable. No compatibility results are recorded here.
+- Use developer tools to inspect the console and network panel when loading the page and, if you choose to send a request, when submitting it. Distinguish page-loading errors from API response, authentication, or network errors; inspect status and failure details without copying or exposing the API key.
+- Inspect `index.html` for local asset paths and external requests. Confirm any local files you add resolve from the page, and check external request failures rather than assuming the page has no dependencies because the listed root has no asset directory.
+- Compare a narrow mobile-sized viewport with a wide desktop-sized viewport. Check that the model selector, API-key field, chat area, and visible controls fit and remain usable.
+- If you test a live request, use only your own key, review current usage terms and possible charges first, and do not include the key in screenshots or shared logs.
 
 ## Manual review checklist
 
-This is a checklist of actions to perform, not a record of verified results.
+These are review steps, not verified results.
 
-- Open the root `index.html` in a browser, or use the local preview steps above. Locate the model selector, API-key field, and chat area.
-- Try the visible controls without entering or exposing a real key. If you choose to send a request, use only your own key and first review current usage terms and possible charges. Never include the key in screenshots or commit it.
-- Inspect the page at a narrow mobile-sized viewport and a wide desktop-sized viewport. Check that the selector, key field, chat area, and any visible controls fit and remain usable.
-- If you add local assets, check that their relative paths resolve from `index.html`.
+- Open the root `index.html` or use the local preview steps above. Locate the model selector, API-key field, and chat area.
+- Review visible controls without entering a real key. If you choose to send a request, follow the API key safety guidance and inspect the result without exposing the key.
+- After adding assets or changing layout, repeat the path, network, and viewport checks above.
 
 ## Accessibility review checklist
 
 These are future review checks, not verified accessibility results.
 
-- Use Tab and Shift+Tab to check whether the model selector, API-key field, and other visible controls can be reached and used from the keyboard. Check that focus order moves sensibly through the form and chat area.
-- Check that keyboard focus is clearly visible on the selector, key field, and other focused controls.
-- Review the model selector and API-key field for meaningful labels, and check whether any other controls have names that communicate their purpose. If request feedback or chat updates are shown, check whether they can be identified and followed without relying only on visual changes.
-- Check text, field-label, and control contrast against the page backgrounds, including at narrow viewports.
-- If you add images or motion effects while customizing `index.html`, check whether informative images have text alternatives and whether motion responds to the operating system's reduced-motion preference.
+- Use Tab and Shift+Tab to check keyboard access and logical focus order for the model selector, API-key field, chat area, and other visible controls. Check that focus is visible.
+- Review the selector and key field for meaningful labels and other controls for names that communicate their purpose. Check whether request feedback and chat updates can be identified without relying only on visual changes.
+- Check text, field-label, and control contrast against page backgrounds, including at narrow viewports.
+- If you add images or motion effects, check text alternatives for informative images and behavior with the operating system's reduced-motion preference enabled.
