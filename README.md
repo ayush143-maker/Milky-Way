@@ -8,7 +8,7 @@ No package installation is needed. Open `index.html` in a modern browser. To ser
 
     python -m http.server 8000
 
-Then visit http://localhost:8000.
+Then visit http://localhost:8000. After editing, reload the page and review the interface in the browser.
 
 ## API key safety
 
