@@ -19,3 +19,12 @@ The visible page is in `index.html`. You can revise its wording and presentation
 ## API key safety
 
 Use only your own API key. Do not put it in source code, commit it, or expose it in screenshots. Check OpenRouter’s current settings and usage terms before sending requests; model usage may incur charges. Do not publish or share your key.
+
+## Manual review checklist
+
+This is a checklist of actions to perform, not a record of verified results.
+
+- Open the root `index.html` in a browser, or use the local preview steps above. Locate the model selector, API-key field, and chat area.
+- Try the visible controls without entering or exposing a real key. If you choose to send a request, use only your own key and first review current usage terms and possible charges. Never include the key in screenshots or commit it.
+- Inspect the page at a narrow mobile-sized viewport and a wide desktop-sized viewport. Check that the selector, key field, chat area, and any visible controls fit and remain usable.
+- If you add local assets, check that their relative paths resolve from `index.html`.
