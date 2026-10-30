@@ -20,6 +20,15 @@ The visible page is in `index.html`. You can revise its wording and presentation
 
 Use only your own API key. Do not put it in source code, commit it, or expose it in screenshots. Check OpenRouter’s current settings and usage terms before sending requests; model usage may incur charges. Do not publish or share your key.
 
+## Asset and loading review checklist
+
+This is a checklist of actions to perform, not a record of verified results.
+
+- Inspect `index.html` for local images, fonts, stylesheets, audio, or other referenced files. Confirm each local path resolves; if you add assets, remove files only after confirming they are unused.
+- Keep any added media sized for its use in the page, rather than including unnecessarily large originals or multiple unused copies.
+- Review HTML references and inline styles for external font or script requests. Confirm each external dependency is intentional and check that the form and chat area remain usable if an optional resource is unavailable.
+- The tester's request behavior is separate from page assets: before sending a request, follow the API key safety guidance above.
+
 ## Manual review checklist
 
 This is a checklist of actions to perform, not a record of verified results.
