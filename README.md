@@ -4,7 +4,7 @@ A browser-based OpenRouter tester. The root `index.html` provides a model select
 
 ## Open locally
 
-No package installation is needed. Open `index.html` in a modern browser. To serve the project folder over HTTP, run this from the project folder:
+No package installation is needed. Open `index.html` in a browser. To serve the project folder over HTTP, run this from the project folder:
 
     python -m http.server 8000
 
