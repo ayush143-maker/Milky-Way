@@ -56,3 +56,8 @@ These are future review checks, not verified accessibility results.
 - Review the selector and key field for meaningful labels and other controls for names that communicate their purpose. Check whether request feedback and chat updates can be identified without relying only on visual changes.
 - Check text, field-label, and control contrast against page backgrounds, including at narrow viewports.
 - If you add images or motion effects, check text alternatives for informative images and behavior with the operating system’s reduced-motion preference enabled.
+
+## Final release review
+
+- Open `index.html` from the published location and confirm the page loads as expected.
+- Review the published result once on a narrow screen and once on a wider screen; treat this as a release check, not an automated test report.
