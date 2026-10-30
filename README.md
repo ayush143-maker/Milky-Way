@@ -18,11 +18,11 @@ The visible page is in `index.html`. You can revise its wording and presentation
 
 ## Troubleshooting
 
-Use these as diagnostic checks; they do not indicate known problems.
+These are diagnostic checks, not reports of known problems.
 
 1. Confirm you opened the root `index.html`, the tester’s entry page. Check that the model selector, API-key field, and chat area are present.
 2. If a page resource you added is missing, check its path relative to `index.html` and confirm the local file exists.
-3. Inspect the browser console and network panel. Separate errors loading the page or its local resources from failures on a request you chose to send; API authentication, service response, and network problems require different diagnosis.
+3. Inspect the browser console and network panel. Distinguish errors loading the page or local resources from failures on a request you chose to send; authentication, service responses, and network problems need separate diagnosis.
 4. A live OpenRouter request depends on network access and the API service. This is distinct from loading the local HTML page. Do not copy an API key into shared logs, screenshots, or troubleshooting notes.
 
 ## API key and data safety
@@ -31,13 +31,13 @@ This is a client-side page, not a secure place to store credentials. Any API key
 
 Use only your own API key. If a key is exposed, take appropriate steps to revoke or replace it. Check OpenRouter’s current settings and usage terms before sending requests; model usage may incur charges. Do not publish or share your key.
 
-## Review checklist
+## Contributor handoff
 
-These are review steps, not verified test results.
+Keep changes scoped to the intended page content, controls, or layout. Preserve `index.html` and existing references; if adding or moving local assets, update their paths and keep filenames consistent. In your handoff, briefly describe what changed and which files or references were affected. Manually review the result before publishing, using the checks below as appropriate. These are review steps, not verified results.
 
 - Review the visible controls without entering a real key. If you choose to send a request, use only your own key and consider possible charges first.
 - Review the page at narrow and wide viewport sizes; check that the selector, key field, chat area, and controls remain usable.
-- After adding assets or changing layout, repeat the path and browser-console checks above.
+- After adding assets or changing layout, check their paths and inspect the browser console and network panel.
 
 ## Accessibility review checklist
 
