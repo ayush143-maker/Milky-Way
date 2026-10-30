@@ -1,10 +1,10 @@
 # Milky-Way
 
-A browser-based OpenRouter tester with a model selector, an API-key field, and a chat area for trying model requests. Visitors can choose a model, enter their own key, and use the chat area to try a request. This is a client-side tester, not a server-side key vault; the README does not establish a separate backend capability.
+A browser-based OpenRouter tester. The `index.html` page provides a model selector, an API-key field, and a chat area for trying model requests. This is a client-side tester, not a server-side key vault.
 
 ## Open locally
 
-No package installation is needed. Open `index.html` in a modern browser. To serve the project folder over HTTP, run this command from the project folder:
+No package installation is needed. Open `index.html` in a modern browser. To serve the project folder over HTTP, run this from the project folder:
 
     python -m http.server 8000
 
