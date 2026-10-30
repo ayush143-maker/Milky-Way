@@ -1,6 +1,6 @@
 # Milky-Way
 
-A browser-based OpenRouter tester. The `index.html` page provides a model selector, an API-key field, and a chat area for trying model requests. This is a client-side tester, not a server-side key vault.
+A browser-based OpenRouter tester. The root `index.html` provides a model selector, an API-key field, and a chat area for trying model requests. This is a client-side tester, not a server-side key vault.
 
 ## Open locally
 
