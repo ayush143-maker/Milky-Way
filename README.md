@@ -16,6 +16,16 @@ Then visit <http://localhost:8000>.
 
 The visible page is in `index.html`. You can revise its wording and presentation there, but take care not to remove or rename the model selector, API-key field, or chat area if you still want to use the tester. The listed root files include no separate asset directory; if you add local assets, keep their paths relative to `index.html` correct.
 
+## Deployment-readiness checklist
+
+The repository inventory lists `README.md` and `index.html`, with no scripts or separate build-output directory. No deployment configuration or completed deployment is verified here. The following are recommendations to check before and after publishing:
+
+- [ ] **Select the correct root/output directory.** For this project as listed, use the project folder containing the root `index.html` as the published root, unless your chosen publishing process requires a different setting. Confirm that the resulting page entry point is `index.html`; do not point to a directory that omits it.
+- [ ] **Check asset paths.** No separate asset directory is listed. If you add images, stylesheets, or other local files, confirm that each reference in `index.html` uses the correct path relative to that file, and that filenames and capitalization match.
+- [ ] **Review configuration and secrets.** This is a client-side page, not a secure place to store credentials. Do not hard-code an API key in `index.html` or any browser-delivered file, or commit or share one. The listed root files contain no `.env.example` or server-side configuration; do not assume environment variables provide a secure substitute for a backend.
+- [ ] **Review the page before publishing.** Check the model selector, API-key field, chat area, layout, and any added resources. Do not enter a real key just to preview the page. If you choose to send a request, use only your own key and consider possible charges first.
+- [ ] **Preview after publishing.** Once published, open the resulting page using the URL provided by your chosen publishing process. Check that the page loads, the intended controls are present and usable, and any added assets load. Inspect the browser console and network panel if something is missing. This preview is a recommended check, not a verified result.
+
 ## Troubleshooting
 
 These are diagnostic checks, not reports of known problems.
@@ -27,17 +37,16 @@ These are diagnostic checks, not reports of known problems.
 
 ## API key and data safety
 
-This is a client-side page, not a secure place to store credentials. Any API key entered into a browser-delivered page is available in that browser environment and should not be treated as secret from the person using the browser. Do not hard-code a key in `index.html`, commit it, or include it in screenshots, copied logs, or shared troubleshooting details. The listed root files contain no `.env.example` or server-side configuration; do not add or assume environment variables as a substitute for a secure backend.
-
-Use only your own API key. If a key is exposed, take appropriate steps to revoke or replace it. Check OpenRouter’s current settings and usage terms before sending requests; model usage may incur charges. Do not publish or share your key.
+Any API key entered into a browser-delivered page is available in that browser environment and should not be treated as secret from the person using the browser. Do not hard-code a key in `index.html`, commit it, or include it in screenshots, copied logs, or shared troubleshooting details. Use only your own API key. If a key is exposed, take appropriate steps to revoke or replace it. Check OpenRouter’s current settings and usage terms before sending requests; model usage may incur charges. Do not publish or share your key.
 
 ## Contributor handoff
 
-Keep changes scoped to the intended page content, controls, or layout. Preserve `index.html` and existing references; if adding or moving local assets, update their paths and keep filenames consistent. In your handoff, briefly describe what changed and which files or references were affected. Manually review the result before publishing, using the checks below as appropriate. These are review steps, not verified results.
+Keep changes scoped to the intended page content, controls, or layout. Preserve `index.html` and existing references; if adding or moving local assets, update their paths and keep filenames consistent. In your handoff, briefly describe what changed and which files or references were affected. Manually review the result before publishing. These are review steps, not verified results.
 
 - Review the visible controls without entering a real key. If you choose to send a request, use only your own key and consider possible charges first.
 - Review the page at narrow and wide viewport sizes; check that the selector, key field, chat area, and controls remain usable.
 - After adding assets or changing layout, check their paths and inspect the browser console and network panel.
+- After publishing, open the resulting page and check it again in the browser.
 
 ## Accessibility review checklist
 
