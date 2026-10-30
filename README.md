@@ -13,3 +13,7 @@ Then visit http://localhost:8000. After editing, reload the page and review the 
 ## API key safety
 
 Use only your own API key. Do not put it in source code, commit it, or expose it in screenshots. Check OpenRouter's current settings and usage terms before sending requests; model usage may incur charges.
+
+## Hosting
+
+This is a static page and can be served by a static host. Remember that the tester runs in the browser and is not a server-side key vault; do not publish or share your key.
