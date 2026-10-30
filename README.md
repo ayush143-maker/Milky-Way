@@ -4,11 +4,11 @@ A browser-based OpenRouter tester with model selection, an API-key field, and a 
 
 ## Open locally
 
-No package installation is needed. Open `index.html` in a modern browser, or run:
+No package installation is needed. Open `index.html` in a modern browser. To serve the project folder over HTTP, run this command from the project folder:
 
     python -m http.server 8000
 
-Visit http://localhost:8000.
+Then visit http://localhost:8000.
 
 ## API key safety
 
