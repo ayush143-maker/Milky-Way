@@ -28,3 +28,13 @@ This is a checklist of actions to perform, not a record of verified results.
 - Try the visible controls without entering or exposing a real key. If you choose to send a request, use only your own key and first review current usage terms and possible charges. Never include the key in screenshots or commit it.
 - Inspect the page at a narrow mobile-sized viewport and a wide desktop-sized viewport. Check that the selector, key field, chat area, and any visible controls fit and remain usable.
 - If you add local assets, check that their relative paths resolve from `index.html`.
+
+## Accessibility review checklist
+
+These are future review checks, not verified accessibility results.
+
+- Use Tab and Shift+Tab to check whether the model selector, API-key field, and other visible controls can be reached and used from the keyboard. Check that focus order moves sensibly through the form and chat area.
+- Check that keyboard focus is clearly visible on the selector, key field, and other focused controls.
+- Review the model selector and API-key field for meaningful labels, and check whether any other controls have names that communicate their purpose. If request feedback or chat updates are shown, check whether they can be identified and followed without relying only on visual changes.
+- Check text, field-label, and control contrast against the page backgrounds, including at narrow viewports.
+- If you add images or motion effects while customizing `index.html`, check whether informative images have text alternatives and whether motion responds to the operating system's reduced-motion preference.
